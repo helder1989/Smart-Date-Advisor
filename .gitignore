@@ -1,3 +1,22 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Onfly OAuth tokens
+.onfly-tokens.json
+
+# MCP / OMC state
 .omc/
-.claude/
+.claude/onfly-oauth-skill/.omc/
+.claude/onfly-oauth-skill/node_modules/
+
+# Local overrides
 *.local

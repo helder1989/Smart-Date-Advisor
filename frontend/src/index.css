@@ -1,0 +1,181 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Mono:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 218 25% 97%;
+    --foreground: 215 50% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 50% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 50% 7%;
+    --primary: 214 100% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 50% 95%;
+    --secondary-foreground: 214 100% 40%;
+    --muted: 218 25% 97%;
+    --muted-foreground: 217 12% 44%;
+    --accent: 160 100% 36%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 22 95% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 214 100% 40%;
+    --radius: 0.5rem;
+
+    --onfly-blue: 214 100% 40%;
+    --onfly-blue-hover: 214 100% 30%;
+    --onfly-green: 160 100% 36%;
+    --onfly-green-bg: 152 73% 94%;
+    --onfly-green-text: 160 100% 27%;
+    --onfly-orange: 22 95% 46%;
+    --onfly-bg: 218 25% 97%;
+    --onfly-surface: 0 0% 100%;
+    --onfly-text: 215 50% 7%;
+    --onfly-text-secondary: 217 12% 44%;
+    --onfly-text-muted: 215 10% 66%;
+    --onfly-border: 214 20% 90%;
+    --onfly-info-bg: 220 60% 95%;
+    --onfly-info-border: 220 60% 80%;
+    --onfly-info-text: 228 56% 48%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+  }
+}
+
+/* Chrome extension sidebar constraint */
+.sidebar-panel {
+  width: 380px;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0 auto;
+}
+
+/* Font utilities */
+.font-mono-price {
+  font-family: 'DM Mono', monospace;
+}
+
+/* Hide native date input arrow */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+/* Custom slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid hsl(214 100% 40%);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Animations */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideUpSmall {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes flyPlane {
+  0% { transform: translateX(-20px) translateY(0); }
+  25% { transform: translateX(10px) translateY(-4px); }
+  50% { transform: translateX(40px) translateY(0); }
+  75% { transform: translateX(70px) translateY(4px); }
+  100% { transform: translateX(100px) translateY(0); }
+}
+
+@keyframes pillPop {
+  0% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 250ms ease-out forwards;
+}
+
+.animate-fade-slide-up-small {
+  animation: fadeSlideUpSmall 200ms ease-out forwards;
+}
+
+.animate-spin-loader {
+  animation: spin 700ms linear infinite;
+}
+
+.animate-pop-in {
+  animation: popIn 200ms ease-out forwards;
+}
+
+.animate-fly-plane {
+  animation: flyPlane 2.5s ease-in-out infinite;
+}
+
+.animate-pill-pop {
+  animation: pillPop 150ms ease-out;
+}

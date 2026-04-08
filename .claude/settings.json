@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "onfly": {
+      "command": "node",
+      "args": [".claude/onfly-oauth-skill/mcp-server.js"],
+      "cwd": "c:/Users/luiz.linhares_onfly/Desktop/Smart-Date-Advisor",
+      "env": {
+        "CLIENT_ID": "${env:CLIENT_ID}",
+        "CLIENT_SECRET": "${env:CLIENT_SECRET}"
+      }
+    }
+  }
+}
