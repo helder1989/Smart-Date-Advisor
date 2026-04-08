@@ -1,4 +1,4 @@
-import { Modality, IInsight } from '../models/ICommon';
+import { Modality, IInsight, ITripPlan } from '../models/ICommon';
 import { IFlightSearchParams, IFlightResult } from '../models/IFlight';
 import { IHotelSearchParams, IHotelResult } from '../models/IHotel';
 import { ICarSearchParams, ICarResult } from '../models/ICar';
@@ -16,6 +16,19 @@ export interface IAnalysisResponse {
   totalCombinationsAnalyzed: number;
 }
 
+export interface ITripPlanRequest {
+  plan: ITripPlan;
+}
+
+export interface ITripPlanResponse {
+  transportResults?: IAnalysisResponse;
+  hotelResults?: IAnalysisResponse;
+  carResults?: IAnalysisResponse;
+  combinedInsight: IInsight;
+  totalSavings: number;
+}
+
 export interface IAnalysisService {
   analyzeDates(request: IAnalysisRequest): Promise<IAnalysisResponse>;
+  planTrip(request: ITripPlanRequest): Promise<ITripPlanResponse>;
 }
