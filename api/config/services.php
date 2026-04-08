@@ -37,11 +37,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Claude API (Anthropic)
+    | Claude API (Anthropic) — mantido por compatibilidade
     |--------------------------------------------------------------------------
     */
     'claude' => [
         'api_key' => env('CLAUDE_API_KEY'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudflare Workers AI
+    |--------------------------------------------------------------------------
+    */
+    'cloudflare_ai' => [
+        'account_id'     => env('CLOUDFLARE_AI_ACCOUNT_ID'),
+        'api_token'      => env('CLOUDFLARE_AI_API_TOKEN'),
+        'model'          => env('CLOUDFLARE_AI_MODEL', '@cf/meta/llama-3-8b-instruct'),
+        'fallback_regex' => env('CLOUDFLARE_AI_FALLBACK_REGEX', true),
     ],
 
     /*

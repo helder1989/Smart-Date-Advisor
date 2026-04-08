@@ -6,6 +6,7 @@ use App\Services\GatewayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SearchController extends Controller
 {
@@ -108,11 +109,19 @@ class SearchController extends Controller
     }
 
     /**
-     * Cache helper — evita repetição do padrão Cache::remember() nos métodos.
+     * Cache helper com fallback para quando Redis está offline.
      * TTL em minutos. Dados de destino mudam pouco, 60 min é seguro.
      */
     private function cached(string $key, int $ttl, \Closure $fn): mixed
     {
-        return Cache::remember($key, now()->addMinutes($ttl), $fn);
+        try {
+            return Cache::remember($key, now()->addMinutes($ttl), $fn);
+        } catch (\Throwable $e) {
+            Log::warning('SearchController: cache unavailable, querying directly', [
+                'key'     => $key,
+                'message' => $e->getMessage(),
+            ]);
+            return $fn();
+        }
     }
 }

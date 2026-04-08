@@ -94,6 +94,10 @@ class ClaudeService
             JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
         );
 
+        $dataLabel = ($params['data_source'] ?? 'history') === 'quote'
+            ? 'Cotações reais por combinação de datas em BRL (JSON). Campos: price_brl = tarifa base, total_price_brl = total com taxas. Ordene pelo menor total_price_brl:'
+            : 'Histórico de reservas para esse trecho em BRL (JSON — use para inferir padrões de preço):';
+
         return <<<PROMPT
 Modalidade: {$params['modality']}
 Trecho: {$params['origin']} → {$params['destination']}
@@ -103,7 +107,7 @@ Flexibilidade de ida: ±{$params['flexibility_from']} dias
 Flexibilidade de volta: ±{$params['flexibility_to']} dias
 Viajantes: {$params['travelers']}
 
-Histórico de preços para esse trecho (JSON):
+{$dataLabel}
 {$historicalJson}
 
 Retorne um JSON com esta estrutura exata:
