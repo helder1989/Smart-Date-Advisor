@@ -1,0 +1,48 @@
+import { IHotelResult } from '../interfaces/models/IHotel';
+
+export const mockHotelResults: IHotelResult[] = [
+  {
+    id: 'h1',
+    isBestPick: true,
+    price: { originalPrice: 1890, bestPrice: 1450, savings: 440, currency: 'BRL' },
+    dates: { startDate: '2025-06-09', endDate: '2025-06-12' },
+    destination: 'São Paulo, SP',
+    hotelName: 'Ibis Paulista',
+    checkIn: '2025-06-09',
+    checkOut: '2025-06-12',
+    nightCount: 3,
+  },
+  {
+    id: 'h2',
+    isBestPick: false,
+    price: { originalPrice: 1890, bestPrice: 1560, savings: 330, currency: 'BRL' },
+    dates: { startDate: '2025-06-10', endDate: '2025-06-13' },
+    destination: 'São Paulo, SP',
+    hotelName: 'Mercure Faria Lima',
+    checkIn: '2025-06-10',
+    checkOut: '2025-06-13',
+    nightCount: 3,
+  },
+  {
+    id: 'h3',
+    isBestPick: false,
+    price: { originalPrice: 1890, bestPrice: 1640, savings: 250, currency: 'BRL' },
+    dates: { startDate: '2025-06-08', endDate: '2025-06-11' },
+    destination: 'São Paulo, SP',
+    hotelName: 'Novotel Jaraguá',
+    checkIn: '2025-06-08',
+    checkOut: '2025-06-11',
+    nightCount: 3,
+  },
+  {
+    id: 'h4',
+    isBestPick: false,
+    price: { originalPrice: 1890, bestPrice: 1720, savings: 170, currency: 'BRL' },
+    dates: { startDate: '2025-06-11', endDate: '2025-06-14' },
+    destination: 'São Paulo, SP',
+    hotelName: 'Holiday Inn Anhembi',
+    checkIn: '2025-06-11',
+    checkOut: '2025-06-14',
+    nightCount: 3,
+  },
+];

@@ -1,0 +1,48 @@
+import { IBusResult } from '../interfaces/models/IBus';
+
+export const mockBusResults: IBusResult[] = [
+  {
+    id: 'b1',
+    isBestPick: true,
+    price: { originalPrice: 320, bestPrice: 218, savings: 102, currency: 'BRL' },
+    dates: { startDate: '2025-06-08', endDate: '2025-06-12' },
+    origin: 'São Paulo, SP',
+    destination: 'Brasília, DF',
+    departureDate: '2025-06-08',
+    returnDate: '2025-06-12',
+    busCompany: 'Viação Cometa',
+  },
+  {
+    id: 'b2',
+    isBestPick: false,
+    price: { originalPrice: 320, bestPrice: 245, savings: 75, currency: 'BRL' },
+    dates: { startDate: '2025-06-09', endDate: '2025-06-13' },
+    origin: 'São Paulo, SP',
+    destination: 'Brasília, DF',
+    departureDate: '2025-06-09',
+    returnDate: '2025-06-13',
+    busCompany: 'Itapemirim',
+  },
+  {
+    id: 'b3',
+    isBestPick: false,
+    price: { originalPrice: 320, bestPrice: 268, savings: 52, currency: 'BRL' },
+    dates: { startDate: '2025-06-10', endDate: '2025-06-14' },
+    origin: 'São Paulo, SP',
+    destination: 'Brasília, DF',
+    departureDate: '2025-06-10',
+    returnDate: '2025-06-14',
+    busCompany: 'Gontijo',
+  },
+  {
+    id: 'b4',
+    isBestPick: false,
+    price: { originalPrice: 320, bestPrice: 290, savings: 30, currency: 'BRL' },
+    dates: { startDate: '2025-06-11', endDate: '2025-06-15' },
+    origin: 'São Paulo, SP',
+    destination: 'Brasília, DF',
+    departureDate: '2025-06-11',
+    returnDate: '2025-06-15',
+    busCompany: 'Viação Cometa',
+  },
+];
