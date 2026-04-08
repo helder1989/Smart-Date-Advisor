@@ -1,0 +1,606 @@
+openapi: 3.0.3
+
+info:
+  title: Smart Data Advisor API
+  description: |
+    Backend proxy para o Smart Data Advisor — extensão Chrome do hackathon Onfly.
+
+    Responsabilidades:
+    - Autenticar usuários via OAuth2 Onfly
+    - Buscar destinos por modalidade no gateway de viagens
+    - Analisar combinações de datas via Claude API e retornar as 4 melhores sugestões
+
+    **Autenticação:** todas as rotas protegidas exigem `Authorization: Bearer <token>` obtido via `/auth/login`.
+
+    **Rate limit Onfly:** 200 req / 30 min — respostas de busca são cacheadas por 60 min.
+  version: 1.0.0
+  contact:
+    name: Onfly Hackathon
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development
+  - url: https://smart-data-advisor.onfly.com.br/api
+    description: Produção
+
+tags:
+  - name: Health
+    description: Status da aplicação
+  - name: Auth
+    description: Autenticação via Onfly OAuth2
+  - name: Search
+    description: Busca de destinos por modalidade
+  - name: Analyze
+    description: Análise de melhores datas via Claude AI
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+securitySchemes:
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: Token JWT obtido via POST /auth/login
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # -------------------------------------------------------------------------
+  # Schemas reutilizáveis
+  # -------------------------------------------------------------------------
+  schemas:
+
+    # — Auth —
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: dougsemtelefone@mailinator.com
+        password:
+          type: string
+          format: password
+          example: "senha123"
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT para uso nas demais rotas
+          example: "eyJ0eXAiOiJKV1Qi..."
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Validade em segundos
+          example: 3600
+
+    # — Search —
+    Airport:
+      type: object
+      properties:
+        iata:
+          type: string
+          example: SSA
+        name:
+          type: string
+          example: Aeroporto Internacional Dep. Luís Eduardo Magalhães
+        city:
+          type: string
+          example: Salvador
+        country:
+          type: string
+          example: Brasil
+
+    City:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "salvador-ba"
+        name:
+          type: string
+          example: Salvador
+        state:
+          type: string
+          example: BA
+        country:
+          type: string
+          example: Brasil
+
+    BusDestination:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "SSA"
+        name:
+          type: string
+          example: Salvador
+        state:
+          type: string
+          example: BA
+
+    # — Analyze —
+    AnalyzeRequest:
+      type: object
+      required:
+        - modality
+        - origin
+        - destination
+        - date_from
+        - date_to
+        - flexibility_from
+        - flexibility_to
+        - travelers
+        - historical_data
+      properties:
+        modality:
+          type: string
+          enum: [aereo, hotel, carro, onibus]
+          example: aereo
+        origin:
+          type: string
+          description: Origem (IATA para aéreo/ônibus, cidade para hotel/carro)
+          example: CNF
+        destination:
+          type: string
+          example: VCP
+        date_from:
+          type: string
+          format: date
+          example: "2026-04-20"
+        date_to:
+          type: string
+          format: date
+          example: "2026-04-25"
+        flexibility_from:
+          type: integer
+          minimum: 0
+          maximum: 7
+          description: Flexibilidade em dias na data de ida
+          example: 3
+        flexibility_to:
+          type: integer
+          minimum: 0
+          maximum: 7
+          description: Flexibilidade em dias na data de volta
+          example: 3
+        travelers:
+          type: integer
+          minimum: 1
+          example: 1
+        historical_data:
+          type: array
+          description: Histórico de reservas retornado pela API Onfly
+          items:
+            type: object
+
+    Suggestion:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+          example: "2026-04-18"
+        date_to:
+          type: string
+          format: date
+          example: "2026-04-23"
+        price:
+          type: number
+          format: float
+          example: 487.50
+        savings:
+          type: number
+          format: float
+          description: Economia em relação à data original (negativo = mais caro)
+          example: 112.50
+        label:
+          type: string
+          enum: ["Melhor opção", "2ª opção", "3ª opção", "4ª opção"]
+          example: "Melhor opção"
+
+    AnalyzeResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/Suggestion'
+        insight:
+          type: string
+          description: Insight gerado pelo Claude em pt-BR (máx 2 frases)
+          example: "Antecipar a ida em 2 dias reduz o preço em 18%. Terças e quartas têm as melhores tarifas nesse trecho."
+        combinations_analyzed:
+          type: integer
+          description: Total de combinações de datas avaliadas
+          example: 49
+
+    # — Errors —
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The search field is required.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            search: ["The search field is required."]
+
+    UnauthorizedError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Token inválido ou expirado.
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+
+  # --------------------------------------------------------------------------
+  # Health
+  # --------------------------------------------------------------------------
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Verifica se a API está no ar. Usado pelo Docker e monitoramento.
+      operationId: health
+      responses:
+        '200':
+          description: Aplicação saudável
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2026-04-08T12:00:00-03:00"
+
+  # --------------------------------------------------------------------------
+  # Auth
+  # --------------------------------------------------------------------------
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login via Onfly OAuth2
+      description: |
+        Autentica o usuário com e-mail e senha via fluxo OAuth2 password grant da Onfly.
+
+        Em ambiente local com `TOKEN_DEV` configurado no `.env`, o fluxo OAuth é ignorado
+        e o token de dev é retornado diretamente.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login bem-sucedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  # --------------------------------------------------------------------------
+  # Search
+  # --------------------------------------------------------------------------
+  /search/airports:
+    get:
+      tags: [Search]
+      summary: Busca aeroportos
+      description: |
+        Retorna aeroportos que correspondem ao termo buscado (nome da cidade ou código IATA).
+        Usado na seleção de origem e destino na modalidade **aéreo**.
+
+        Resultados cacheados por **60 minutos** por termo.
+      operationId: searchAirports
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          description: Nome da cidade ou código IATA (mín. 2 caracteres)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          example: salvador
+      responses:
+        '200':
+          description: Lista de aeroportos encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Airport'
+              example:
+                - iata: SSA
+                  name: Aeroporto Internacional Dep. Luís Eduardo Magalhães
+                  city: Salvador
+                  country: Brasil
+        '401':
+          description: Token inválido ou ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Parâmetro search ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /search/hotel-cities:
+    get:
+      tags: [Search]
+      summary: Busca cidades para hotel
+      description: |
+        Autocomplete de cidades para seleção de destino na modalidade **hotel**.
+
+        Resultados cacheados por **60 minutos** por termo.
+      operationId: searchHotelCities
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          description: Nome da cidade (mín. 2 caracteres)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          example: salvador
+      responses:
+        '200':
+          description: Lista de cidades encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+              example:
+                - id: salvador-ba
+                  name: Salvador
+                  state: BA
+                  country: Brasil
+        '401':
+          description: Token inválido ou ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Parâmetro search ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /search/car-cities:
+    get:
+      tags: [Search]
+      summary: Busca cidades para aluguel de carro
+      description: |
+        Retorna cidades disponíveis para retirada de veículo na modalidade **carro**.
+
+        Resultados cacheados por **60 minutos** por termo.
+      operationId: searchCarCities
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Nome da cidade (mín. 2 caracteres)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          example: salvador
+      responses:
+        '200':
+          description: Lista de cidades encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+              example:
+                - id: salvador-ba
+                  name: Salvador
+                  state: BA
+                  country: Brasil
+        '401':
+          description: Token inválido ou ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Parâmetro name ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /search/bus-destinations:
+    get:
+      tags: [Search]
+      summary: Busca terminais de ônibus
+      description: |
+        Retorna terminais de ônibus que correspondem ao termo buscado.
+        Usado tanto para origem quanto para destino na modalidade **ônibus**.
+
+        Resultados cacheados por **60 minutos** por termo.
+      operationId: searchBusDestinations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          description: Nome da cidade ou terminal (mín. 2 caracteres)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          example: salvador
+      responses:
+        '200':
+          description: Lista de terminais encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BusDestination'
+              example:
+                - id: SSA
+                  name: Salvador
+                  state: BA
+        '401':
+          description: Token inválido ou ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Parâmetro search ausente ou inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  # --------------------------------------------------------------------------
+  # Analyze
+  # --------------------------------------------------------------------------
+  /analyze:
+    post:
+      tags: [Analyze]
+      summary: Analisa melhores combinações de datas
+      description: |
+        Recebe parâmetros de viagem + histórico de reservas e retorna as **4 melhores
+        combinações de datas** dentro da janela de flexibilidade, com insights gerados
+        pelo Claude AI.
+
+        **Fórmula de combinações:** `(2 × flexibility_from + 1) × (2 × flexibility_to + 1)`
+        Exemplo: flex 3+3 → 49 combinações avaliadas.
+
+        Resultados cacheados por **30 minutos** por combinação de parâmetros.
+      operationId: analyze
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+            example:
+              modality: aereo
+              origin: CNF
+              destination: VCP
+              date_from: "2026-04-20"
+              date_to: "2026-04-25"
+              flexibility_from: 3
+              flexibility_to: 3
+              travelers: 1
+              historical_data:
+                - protocol: ORD-001
+                  outbound:
+                    from: CNF
+                    to: VCP
+                    departureDate: "2026-01-10"
+                    price: 350.00
+                    tax: 45.00
+                  inbound:
+                    departureDate: "2026-01-14"
+                  createdAt: "2025-12-20"
+      responses:
+        '200':
+          description: Análise concluída com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+              example:
+                suggestions:
+                  - date_from: "2026-04-18"
+                    date_to: "2026-04-23"
+                    price: 487.50
+                    savings: 112.50
+                    label: "Melhor opção"
+                  - date_from: "2026-04-20"
+                    date_to: "2026-04-25"
+                    price: 520.00
+                    savings: 80.00
+                    label: "2ª opção"
+                  - date_from: "2026-04-19"
+                    date_to: "2026-04-24"
+                    price: 545.00
+                    savings: 55.00
+                    label: "3ª opção"
+                  - date_from: "2026-04-21"
+                    date_to: "2026-04-26"
+                    price: 580.00
+                    savings: 20.00
+                    label: "4ª opção"
+                insight: "Antecipar a ida em 2 dias reduz o preço em 18%. Terças e quartas têm as melhores tarifas nesse trecho."
+                combinations_analyzed: 49
+        '401':
+          description: Token inválido ou ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'

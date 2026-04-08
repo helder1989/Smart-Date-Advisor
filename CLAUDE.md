@@ -13,10 +13,15 @@ npm run test       # Vitest (once)
 npm run test:watch # Vitest (watch mode)
 ```
 
+```bash
+cd api
+php artisan serve  # Laravel API on :8000
+```
+
 ## Architecture
 
-**Frontend-only** (React + Vite), with a planned PHP/Laravel backend not yet implemented.
-All API integrations are currently stubbed — mock services power the full UX flow.
+**Frontend:** React + TypeScript + Vite + Tailwind + shadcn/ui (Chrome Extension Manifest V3 sidebar)
+**Backend:** Laravel (PHP) — proxy para Claude API + gateway de viagens
 
 ```
 frontend/src/
@@ -38,7 +43,38 @@ frontend/src/
 ├── utils/             # formatters, validators, calculations
 ├── mockDatabase/      # Hardcoded test data (users, flights, hotels, etc.)
 └── lib/               # cn() utility (clsx + tailwind-merge)
+
+api/
+├── app/Http/Controllers/   # AnalyzeController, AuthController, SearchController
+├── app/Services/           # ClaudeService, GatewayService, OnflyAuthService
+├── app/Http/Middleware/    # ValidateOnflyToken
+└── routes/api.php          # GET /health, POST /auth/login, POST /analyze, GET /search/*
 ```
+
+## API Endpoints
+
+| Método | Path | Descrição |
+|--------|------|-----------|
+| GET | `/api/health` | Health check |
+| POST | `/api/auth/login` | Login OAuth2 Onfly |
+| POST | `/api/analyze` | Análise de datas via Claude AI |
+| GET | `/api/search/airports` | Busca aeroportos (aéreo) |
+| GET | `/api/search/hotel-cities` | Busca cidades (hotel) |
+| GET | `/api/search/car-cities` | Busca cidades (carro) |
+| GET | `/api/search/bus-destinations` | Busca terminais (ônibus) |
+
+Spec completa: `docs/openapi.yaml`
+
+## Gateway de Viagens
+
+Base URL: `https://gateway.viagens.dev`
+
+| Modalidade | Endpoint busca destino | Endpoint cotação |
+|---|---|---|
+| ✈️ Aéreo | `GET /bff/destination/airports?search=` | `POST /bff/quote/create` |
+| 🏨 Hotel | `GET /bff/destination/cities/autocomplete?search=` | — |
+| 🚗 Carro | `GET /bff/destination/cities?name=` | — |
+| 🚌 Ônibus | `GET /bff/destination/bus-destinations?search=` | — |
 
 ## Key Patterns
 
@@ -59,7 +95,6 @@ All business logic goes through service interfaces. `ServiceProvider.tsx` wires 
 ```typescript
 type Modality = 'aereo' | 'hotel' | 'carro' | 'onibus';
 ```
-Each modality has: Form component + SearchParams interface + Result interface + MockService + HttpService + mock data.
 
 ### Screen Flow
 ```
@@ -67,33 +102,30 @@ LoginScreen → FormScreen → LoadingScreen → ResultsScreen
                 ↑                              │
                 └──────── "Edit Search" ───────┘
 ```
-Managed via `useState<ScreenState>` in `App.tsx`.
 
 ## Styling
 
-- **Tailwind CSS** with custom Onfly design tokens (see `tailwind.config.ts`)
-- **shadcn/ui** for primitives — add new components via `npx shadcn-ui@latest add <name>`
-- **DM Sans** (default) / **DM Mono** (monospace for prices/dates)
-- Fixed width: `380px` (Chrome extension sidebar constraint)
-- Custom animations defined in `index.css`: fadeSlideUp, popIn, flyPlane, etc.
+- **Tailwind CSS** com tokens Onfly (`tailwind.config.ts`)
+- **shadcn/ui** para primitivos
+- **DM Sans** (body) / **DM Mono** (preços/datas)
+- Cor primária: `#0052CC` | Cor economia: `#00B37E`
+- Fixed width: `380px` (Chrome extension sidebar)
 
-## Testing
+## Variáveis de Ambiente (api/.env)
 
-- **Unit tests**: Vitest + Testing Library (`src/**/*.{test,spec}.{ts,tsx}`)
-- **E2E**: Playwright (configured but minimal coverage)
-- Test setup mocks `window.matchMedia` in `src/test/setup.ts`
+```
+CLAUDE_API_KEY=
+ONFLY_CLIENT_ID=
+ONFLY_CLIENT_SECRET=
+ONFLY_API_BASE=https://onfly-dev.viagens.dev
+ONFLY_GATEWAY_URL=https://gateway.viagens.dev
+TOKEN_DEV=   # Token fixo para dev local (deixe vazio em produção)
+```
 
-## Important Notes
+## Convenções
 
-- `components/ui/` is the shadcn/ui library — do NOT manually edit these files
-- All HTTP services are stubs. The real backend (PHP/Laravel) is not yet built
-- The app runs as a Chrome Extension (Manifest V3) — keep bundle size in mind
-- Mock credentials: check `mockDatabase/users.ts` for test logins
-- Path alias: `@` → `frontend/src/` (configured in vite + tsconfig)
-- Language: UI text is in **Portuguese (pt-BR)**
-
-## MCP Integration
-
-The `.claude/onfly-oauth-skill/` contains an MCP server that lets Claude Code authenticate
-with the Onfly API. Tools available after connecting: `onfly_connect`, `onfly_auth_status`,
-`onfly_list_travels`, `onfly_list_hotel_orders`, `onfly_list_bookings`, flight/hotel search, etc.
+- PHP: PSR-12, snake_case variáveis, PascalCase classes
+- React: componentes funcionais, hooks
+- Commits: `feat:` / `fix:` / `chore:`
+- Token Chrome: `chrome.storage.local` (nunca localStorage)
+- Sem API keys expostas no frontend

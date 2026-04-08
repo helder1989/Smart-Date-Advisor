@@ -13,6 +13,10 @@ Thumbs.db
 # Onfly OAuth tokens
 .onfly-tokens.json
 
-# MCP state
+# MCP / OMC state
+.omc/
 .claude/onfly-oauth-skill/.omc/
 .claude/onfly-oauth-skill/node_modules/
+
+# Local overrides
+*.local
