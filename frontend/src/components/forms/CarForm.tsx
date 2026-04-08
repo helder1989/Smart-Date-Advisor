@@ -1,16 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ICarSearchParams } from '../../interfaces/models/ICar';
 import { getCarDefaults } from '../../constants/defaults';
 import { DateInput } from '../shared/DateInput';
 import { FlexibilitySliders } from '../shared/FlexibilitySliders';
 
 interface CarFormProps {
-  onSubmit: (params: ICarSearchParams) => void;
-  loading: boolean;
+  onSubmit?: (params: ICarSearchParams) => void;
+  onChange?: (params: ICarSearchParams) => void;
+  loading?: boolean;
+  embedded?: boolean;
 }
 
-export const CarForm = ({ onSubmit, loading }: CarFormProps) => {
+export const CarForm = ({ onSubmit, onChange, loading, embedded }: CarFormProps) => {
   const [params, setParams] = useState<ICarSearchParams>(getCarDefaults());
+
+  useEffect(() => {
+    onChange?.(params);
+  }, [params]);
 
   return (
     <div className="animate-fade-slide-up-small">
@@ -72,16 +78,18 @@ export const CarForm = ({ onSubmit, loading }: CarFormProps) => {
         returnLabel="Devolução"
       />
 
-      <button
-        onClick={() => onSubmit(params)}
-        disabled={loading}
-        className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-semibold text-[15px] mt-5 hover:bg-onfly-blue-hover active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z" fill="currentColor"/>
-        </svg>
-        Analisar Datas
-      </button>
+      {!embedded && (
+        <button
+          onClick={() => onSubmit?.(params)}
+          disabled={loading}
+          className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-semibold text-[15px] mt-5 hover:bg-onfly-blue-hover active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z" fill="currentColor"/>
+          </svg>
+          Analisar Datas
+        </button>
+      )}
     </div>
   );
 };
