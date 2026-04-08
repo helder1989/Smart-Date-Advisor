@@ -1,0 +1,18 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Onfly OAuth tokens
+.onfly-tokens.json
+
+# MCP state
+.claude/onfly-oauth-skill/.omc/
+.claude/onfly-oauth-skill/node_modules/
