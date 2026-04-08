@@ -133,7 +133,7 @@ export const LoginScreen = ({ onLogin, loading, error }: LoginScreenProps) => {
         </div>
       </div>
 
-      <Footer text="Smart Date Advisor · Onfly" />
+      <Footer text="Planejador de Viagem · Onfly" />
     </div>
   );
 };
