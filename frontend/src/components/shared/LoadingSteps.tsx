@@ -12,9 +12,9 @@ interface StepState {
 
 export const LoadingSteps = ({ onComplete }: LoadingStepsProps) => {
   const [steps, setSteps] = useState<StepState[]>([
-    { text: 'Buscando cotações históricas...', started: false, done: false },
-    { text: 'Cruzando datas disponíveis...', started: false, done: false },
-    { text: 'Gerando insights com IA...', started: false, done: false },
+    { text: 'Buscando as melhores opcoes...', started: false, done: false },
+    { text: 'Comparando precos e datas...', started: false, done: false },
+    { text: 'Combinando tudo para voce...', started: false, done: false },
   ]);
 
   useEffect(() => {

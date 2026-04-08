@@ -1,57 +1,59 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ServiceProvider } from './providers/ServiceProvider';
 import { useAuth } from './hooks/useAuth';
-import { useModality } from './hooks/useModality';
-import { useSearch } from './hooks/useSearch';
-import { ScreenState, Modality } from './interfaces/models/ICommon';
-import { IFlightSearchParams } from './interfaces/models/IFlight';
-import { IHotelSearchParams } from './interfaces/models/IHotel';
-import { ICarSearchParams } from './interfaces/models/ICar';
-import { IBusSearchParams } from './interfaces/models/IBus';
+import { useTripPlanner } from './hooks/useTripPlanner';
+import { ScreenState } from './interfaces/models/ICommon';
 import { LoginScreen } from './components/screens/LoginScreen';
-import { FormScreen } from './components/screens/FormScreen';
+import { WizardScreen } from './components/screens/WizardScreen';
 import { LoadingScreen } from './components/screens/LoadingScreen';
 import { ResultsScreen } from './components/screens/ResultsScreen';
 
-type SearchParams = IFlightSearchParams | IHotelSearchParams | ICarSearchParams | IBusSearchParams;
-
 function AppContent() {
   const [screen, setScreen] = useState<ScreenState>('login');
-  const { user, loading: authLoading, error: authError, login } = useAuth();
-  const { modality, changeModality } = useModality();
-  const { loading: searchLoading, results, submit, reset } = useSearch();
-  const lastSearchParams = useRef<SearchParams | null>(null);
+  const { user, loading: authLoading, checking, error: authError, login } = useAuth();
+  const planner = useTripPlanner();
   const analysisResolvedRef = useRef(false);
+
+  useEffect(() => {
+    if (!checking && user) {
+      setScreen('wizard');
+    }
+  }, [checking, user]);
 
   const handleLogin = useCallback(async (email: string, password: string) => {
     const result = await login(email, password);
     if (result.success) {
-      setScreen('form');
+      setScreen('wizard');
     }
   }, [login]);
 
-  const handleSubmit = useCallback(async (mod: Modality, params: SearchParams) => {
-    lastSearchParams.current = params;
+  const handleSubmit = useCallback(async () => {
     analysisResolvedRef.current = false;
     setScreen('loading');
 
-    const response = await submit(mod, params);
+    const response = await planner.submitPlan();
     analysisResolvedRef.current = true;
-    if (response) {
-      // Will transition when loading steps complete
-    }
-  }, [submit]);
+    // Will transition when loading steps complete
+  }, [planner]);
 
   const handleLoadingComplete = useCallback(() => {
-    if (results) {
+    if (planner.results) {
       setScreen('results');
     }
-  }, [results]);
+  }, [planner.results]);
 
   const handleEditSearch = useCallback(() => {
-    reset();
-    setScreen('form');
-  }, [reset]);
+    planner.reset();
+    setScreen('wizard');
+  }, [planner]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   switch (screen) {
     case 'login':
@@ -62,14 +64,21 @@ function AppContent() {
           error={authError}
         />
       );
-    case 'form':
+    case 'wizard':
       return (
-        <FormScreen
+        <WizardScreen
           userInitials={user?.initials || 'U'}
-          modality={modality}
-          onModalityChange={changeModality}
+          currentStep={planner.currentStep}
+          tripPlan={planner.tripPlan}
+          hasSelections={planner.hasSelections}
+          loading={planner.loading}
+          onTransportChange={planner.setTransport}
+          onHotelChange={planner.setHotel}
+          onCarChange={planner.setCar}
+          onNext={planner.nextStep}
+          onPrev={planner.prevStep}
+          onSkip={planner.skipStep}
           onSubmit={handleSubmit}
-          loading={searchLoading}
         />
       );
     case 'loading':
@@ -80,11 +89,11 @@ function AppContent() {
         />
       );
     case 'results':
-      return results && lastSearchParams.current ? (
+      return planner.results ? (
         <ResultsScreen
           userInitials={user?.initials || 'U'}
-          response={results}
-          searchParams={lastSearchParams.current}
+          response={planner.results}
+          tripPlan={planner.tripPlan}
           onEditSearch={handleEditSearch}
         />
       ) : null;

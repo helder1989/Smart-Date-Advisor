@@ -26,9 +26,9 @@ export const LoadingScreen = ({ userInitials, onComplete }: LoadingScreenProps) 
           </svg>
         </div>
 
-        <h2 className="text-xl font-semibold text-foreground mt-6">Analisando...</h2>
+        <h2 className="text-xl font-semibold text-foreground mt-6">Planejando sua viagem...</h2>
         <p className="text-sm text-onfly-text-secondary mt-1.5 max-w-[260px] text-center">
-          Consultando histórico de preços e calculando as melhores combinações
+          Buscando as melhores combinacoes para sua viagem
         </p>
 
         <div className="mt-8">
