@@ -15,8 +15,8 @@ const CONFIG = {
   apiUrl: 'https://api.onfly.com',
   appUrl: 'https://app.onfly.com',
   gatewayUrl: 'https://toguro-app-prod.onfly.com',
-  clientId: process.env.CLIENT_ID || '1212',
-  clientSecret: process.env.CLIENT_SECRET || 'fLWgKiTE4qmkx7pXwfEcTB7yNjKiisygEbbinWEV',
+  clientId: process.env.CLIENT_ID || '',
+  clientSecret: process.env.CLIENT_SECRET || '',
   preferredPort: parseInt(process.env.PORT) || 3333,
   state: 'onfly_' + Math.random().toString(36).substring(2, 10)
 };
