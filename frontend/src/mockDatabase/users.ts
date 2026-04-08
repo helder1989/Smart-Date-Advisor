@@ -3,10 +3,10 @@ import { IUser, ILoginCredentials } from '../interfaces/models/IUser';
 export const mockUsers: IUser[] = [
   {
     id: '1',
-    name: 'João Costa',
-    email: 'joao@empresa.com',
-    initials: 'JC',
-    company: 'TechCorp Brasil',
+    name: 'Luiz Felipe',
+    email: 'luiz.linhares@onfly.com.br',
+    initials: 'LF',
+    company: 'Onfly',
   },
   {
     id: '2',
@@ -18,6 +18,6 @@ export const mockUsers: IUser[] = [
 ];
 
 export const mockCredentials: ILoginCredentials[] = [
-  { email: 'joao@empresa.com', password: '123456' },
+  { email: 'luiz.linhares@onfly.com.br', password: '123456' },
   { email: 'maria@empresa.com', password: '123456' },
 ];
